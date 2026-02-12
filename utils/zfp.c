@@ -45,6 +45,7 @@ print_error(const void* fin, const void* fout, zfp_type type, size_t n)
   double ermsn = 0;
   double emax = 0;
   double psnr = 0;
+  double rel_err = 0;
   size_t i;
 
   for (i = 0; i < n; i++) {
@@ -77,7 +78,8 @@ print_error(const void* fin, const void* fout, zfp_type type, size_t n)
   erms = sqrt(erms / n);
   ermsn = erms / (fmax - fmin);
   psnr = 20 * log10((fmax - fmin) / (2 * erms));
-  fprintf(stderr, " rmse=%.4g nrmse=%.4g maxe=%.4g psnr=%.2f", erms, ermsn, emax, psnr);
+  rel_err = emax / MAX(fabs(fmin), fabs(fmax));
+  fprintf(stderr, " rmse=%.4g nrmse=%.4g maxe=%.4g rel_err=%.4g psnr=%.2f", erms, ermsn, emax, rel_err, psnr);
 }
 
 static void
