@@ -175,11 +175,6 @@ int main(int argc, char* argv[])
   size_t zfpsize = 0;
   size_t bufsize = 0;
 
-  /* newly added timer */
-  struct timespec ts_start, ts_end;
-  double compress_time = 0.0;
-  double decompress_time = 0.0;
-
   if (argc == 1)
     usage();
 
@@ -533,12 +528,8 @@ int main(int argc, char* argv[])
     }
 
     /* compress data */
-    clock_gettime(CLOCK_MONOTONIC, &ts_start);    // start timer for compress
     zfpsize = zfp_compress(zfp, field);
-    clock_gettime(CLOCK_MONOTONIC, &ts_end);    // end timer for comress
     
-    compress_time = (double)(ts_end.tv_sec - ts_start.tv_sec) + 
-                    (double)(ts_end.tv_nsec - ts_start.tv_nsec) / 1e9;
     if (zfpsize == 0) {
       fprintf(stderr, "compression failed\n");
       return EXIT_FAILURE;
@@ -591,7 +582,6 @@ int main(int argc, char* argv[])
     zfp_field_set_pointer(field, fo);
 
     /* decompress data */
-    clock_gettime(CLOCK_MONOTONIC, &ts_start);    // start timer for decompress
     while (!zfp_decompress(zfp, field)) {
       /* fall back on serial decompression if execution policy not supported */
       if (inpath && zfp_stream_execution(zfp) != zfp_exec_serial) {
@@ -605,9 +595,6 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
       }
     }
-    clock_gettime(CLOCK_MONOTONIC, &ts_end);     // end timer for decompress
-    decompress_time = (double)(ts_end.tv_sec - ts_start.tv_sec) + 
-                      (double)(ts_end.tv_nsec - ts_start.tv_nsec) / 1e9;
 
     /* optionally write reconstructed data */
     if (outpath) {
@@ -629,11 +616,6 @@ int main(int argc, char* argv[])
     const char* type_name[] = { "int32", "int64", "float", "double" };
     fprintf(stderr, "type=%s nx=%zu ny=%zu nz=%zu nw=%zu", type_name[type - zfp_type_int32], nx, ny, nz, nw);
     fprintf(stderr, " raw=%lu zfp=%lu ratio=%.3g rate=%.4g", (unsigned long)rawsize, (unsigned long)zfpsize, (double)rawsize / zfpsize, CHAR_BIT * (double)zfpsize / count);
-    /* print compression and decompression time */
-    if (compress_time > 0)
-        fprintf(stderr, " c_time=%.6f s c_rate=%.2f MB/s", compress_time, (rawsize / 1024.0 / 1024.0) / compress_time);
-    if (decompress_time > 0)
-        fprintf(stderr, " d_time=%.6f s d_rate=%.2f MB/s", decompress_time, (rawsize / 1024.0 / 1024.0) / decompress_time);
     if (stats)
       print_error(fi, fo, type, count);
     fprintf(stderr, "\n");
